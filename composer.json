@@ -1,11 +1,15 @@
 {
-    "name": "mtrajano/laravel-swagger",
+    "name": "SubiviLTD/laravel-swagger",
     "description": "Auto generates the swagger documentation for a laravel project",
     "license": "MIT",
     "authors": [
         {
             "name": "Mauricio Trajano",
             "email": "mauriciot1993@gmail.com"
+        },
+        {
+            "name": "Viktor Leshchuk",
+            "email": "leshchuk.viktor@gmail.com"
         }
     ],
     "require-dev": {

@@ -35,6 +35,78 @@ return [
         // 'application/json',
     ],
 
+    'definitions' => [
+        'ResponsePagination' => [
+            'type' => 'object',
+            'properties' => [
+                'total' => [
+                    'type' => 'integer'
+                ],
+                'per_page' => [
+                    'type' => 'integer'
+                ],
+                'current_page' => [
+                    'type' => 'integer'
+                ],
+                'last_page' => [
+                    'type' => 'integer'
+                ],
+                'next_page_url' => [
+                    'type' => 'string'
+                ],
+                'prev_page_url' => [
+                    'type' => 'string'
+                ],
+                'from' => [
+                    'type' => 'integer'
+                ],
+                'to' => [
+                    'type' => 'integer'
+                ],
+            ]
+        ],
+
+        'Response422' => [
+            'title' => 'error',
+            'type' => 'object',
+            'properties' => [
+                'message' => [
+                    'type' => 'string',
+                    'description' => 'Error description'
+                ],
+                'data' => [
+                    'type' => 'array',
+                    'description' => 'The parameters that fails with validation',
+                    'items' => [
+                        'type' => 'object'
+                    ]
+                ]
+            ]
+        ],
+
+        'Response404' => [
+            'title' => 'error',
+            'type' => 'object',
+            'properties' => [
+                'message' => [
+                    'type' => 'string',
+                    'description' => 'Object / resource is not found'
+                ]
+            ]
+        ],
+
+        'Response401' => [
+            'title' => 'error',
+            'type' => 'object',
+            'properties' => [
+                'message' => [
+                    'type' => 'string',
+                    'description' => 'Unauthorized'
+                ]
+            ]
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Ignore methods

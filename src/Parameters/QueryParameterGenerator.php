@@ -21,7 +21,7 @@ class QueryParameterGenerator implements ParameterGenerator
         foreach  ($this->rules as $param => $rule) {
             $paramRules = $this->splitRules($rule);
             $enums = $this->getEnumValues($paramRules);
-            $type = $this->getParamType($paramRules);
+            $type = $this->getParamType($paramRules, $param);
 
             if ($this->isArrayParameter($param)) {
                 $arrayKey = $this->getArrayKey($param);

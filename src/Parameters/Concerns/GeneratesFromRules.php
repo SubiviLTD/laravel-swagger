@@ -15,8 +15,12 @@ trait GeneratesFromRules
         }
     }
 
-    protected function getParamType(array $paramRules)
+    protected function getParamType(array $paramRules, $paramName = null)
     {
+        if ($paramName && substr($paramName, -2) == 'id' && strpos($paramName, 'original_id') === false) {
+            return 'integer';
+        }
+
         if (in_array('integer', $paramRules)) {
             return 'integer';
         } else if (in_array('numeric', $paramRules)) {
@@ -62,8 +66,16 @@ trait GeneratesFromRules
     private function getInParameter(array $paramRules)
     {
         foreach ($paramRules as $rule) {
-            if (Str::startsWith($rule, 'in:')) {
-                return $rule;
+            if (is_array($rule)) {
+                foreach ($rule as $item) {
+                    if (Str::startsWith((string) $item, 'in:')) {
+                        return $item;
+                    }
+                }
+            } else {
+                if (Str::startsWith((string) $rule, 'in:')) {
+                    return $rule;
+                }
             }
         }
 

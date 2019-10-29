@@ -32,9 +32,16 @@ class BodyParameterGenerator implements ParameterGenerator
             $nameTokens = explode('.', $param);
 
             $this->addToProperties($properties, $nameTokens, $paramRules);
-
             if ($this->isParamRequired($paramRules)) {
                 $required[] = $param;
+            }
+        }
+
+        //fix some bugs
+        foreach ($properties as $k => $v) {
+
+            if ($v['type'] == 'array' && isset($properties[$k]['items'])) {
+                $properties[$k]['items'] = $properties[$k]['items'][0];
             }
         }
 
@@ -52,18 +59,23 @@ class BodyParameterGenerator implements ParameterGenerator
         return 'body';
     }
 
-    protected function addToProperties(&$properties, $nameTokens, $rules)
+    protected function addToProperties(&$properties, $nameTokens, $rules, $prevTypeArray = false)
     {
         if (empty($nameTokens)) {
             return;
         }
+
+//        if($last) {
+//
+//            dd($properties, $nameTokens, $rules);
+//        }
 
         $name = array_shift($nameTokens);
 
         if (!empty($nameTokens)) {
             $type = $this->getNestedParamType($nameTokens);
         } else {
-            $type = $this->getParamType($rules);
+            $type = $this->getParamType($rules, $name);
         }
 
         if ($name === '*') {
@@ -79,8 +91,12 @@ class BodyParameterGenerator implements ParameterGenerator
             $properties[$name]['type'] = $type;
         }
 
+//        if ($prevTypeArray) {
+//            $properties = $properties[0];
+//        }
+
         if ($type === 'array') {
-            $this->addToProperties($properties[$name]['items'], $nameTokens, $rules);
+            $this->addToProperties($properties[$name]['items'], $nameTokens, $rules, true);
         } else if ($type === 'object') {
             $this->addToProperties($properties[$name]['properties'], $nameTokens, $rules);
         }

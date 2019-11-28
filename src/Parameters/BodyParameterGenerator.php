@@ -118,7 +118,9 @@ class BodyParameterGenerator implements ParameterGenerator
         ];
 
         if ($enums = $this->getEnumValues($rules)) {
-            $propObj['enum'] = $enums;
+            $propObj['enum'] = array_map(function($val) {
+                return trim($val, '"');
+            }, $enums);
         }
 
         if ($type === 'array') {

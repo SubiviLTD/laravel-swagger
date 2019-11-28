@@ -12,8 +12,9 @@ class GenerateSwaggerDoc extends Command
      * @var string
      */
     protected $signature = 'laravel-swagger:generate
-                            {--format=json : The format of the output, current options are json and yaml}
-                            {--filter= : Filter to a specific route prefix, such as /api or /v2/api}';
+                            {--filter= : Filter to a specific route prefix, such as /api or /v2/api}
+                            {--prev=swagger.json : Previous file that should be supplemented with new routes/params(not overwriten)}
+                            {--to=swagger.json : File where docs will be stored)}';
 
     /**
      * The console command description.
@@ -31,12 +32,45 @@ class GenerateSwaggerDoc extends Command
     {
         $config = config('laravel-swagger');
 
-        $docs = (new Generator($config, $this->option('filter') ?: null))->generate();
+        $old = file_exists(base_path($this->option('prev')))
+            ? json_decode(file_get_contents(base_path($this->option('prev'))), true)
+            : [];
+
+        $new = (new Generator($config, $this->option('filter') ?: null))->generate();
+
+        $docs = $this->mergeOldAndNew($old, $new);
 
         $formattedDocs = (new FormatterManager($docs))
-            ->setFormat($this->option('format'))
+            ->setFormat('json')
             ->format();
 
-        $this->line($formattedDocs);
+        $fp = fopen($this->option('to'), 'w');
+        fwrite($fp, $formattedDocs);
+        fclose($fp);
+
+    }
+
+    private function mergeOldAndNew($old, $new)
+    {
+        function array_merge_recursive_ex(array $array1, array $array2)
+        {
+            $merged = $array1;
+
+            foreach ($array2 as $key => & $value) {
+                if (is_array($value) && isset($merged[$key]) && is_array($merged[$key])) {
+                    $merged[$key] = array_merge_recursive_ex($merged[$key], $value);
+                } else if (is_numeric($key)) {
+                    if (!in_array($value, $merged)) {
+                        $merged[] = $value;
+                    }
+                } else {
+                    $merged[$key] = $value;
+                }
+            }
+
+            return $merged;
+        }
+
+        return array_merge_recursive_ex($old, $new);
     }
 }

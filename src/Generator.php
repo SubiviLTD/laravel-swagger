@@ -24,6 +24,8 @@ class Generator
 
     protected $method;
 
+    protected $controller;
+
     protected $action;
 
     private $middlewares;
@@ -50,6 +52,9 @@ class Generator
             }
 
             $this->middlewares = $route->gatherMiddleware();
+
+            list($this->controller, $this->action) =
+                explode('@', last(explode('\\', $route->getAction('controller'))));
 
             $this->action = $route->getAction()['uses'];
             $methods = $route->methods();
@@ -147,6 +152,7 @@ class Generator
         list($isDeprecated, $summary, $description) = $this->parseActionDocBlock($docBlock);
 
         $doc = [
+            'tags'  => [$this->getGroupName()],
             'summary' => $summary,
             'description' => $description,
             'deprecated' => $isDeprecated,
@@ -277,5 +283,16 @@ class Generator
         } catch (\Exception $e) {
             return [false, "", ""];
         }
+    }
+
+    private function getGroupName()
+    {
+        return implode(' ', preg_split(
+            '/(^[^A-Z]+|[A-Z][^A-Z]+)/',
+            substr($this->controller, 0, -10),
+            -1, /* no limit for replacement count */
+            PREG_SPLIT_NO_EMPTY /*don't return empty elements*/
+            | PREG_SPLIT_DELIM_CAPTURE /*don't strip anything from output array*/
+        ));
     }
 }

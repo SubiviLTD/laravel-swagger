@@ -25,7 +25,10 @@ class QueryParameterGenerator implements ParameterGenerator
 
             if ($this->isArrayParameter($param)) {
                 $arrayKey = $this->getArrayKey($param);
-                $arrayTypes[$arrayKey] = $type;
+                $arrayTypes[$arrayKey] = [
+                    'type' => $type,
+                    'enums' => $enums
+                ];
                 continue;
             }
 
@@ -55,7 +58,7 @@ class QueryParameterGenerator implements ParameterGenerator
 
     protected function addArrayTypes($params, $arrayTypes)
     {
-        foreach ($arrayTypes as $arrayKey => $type) {
+        foreach ($arrayTypes as $arrayKey => $obj) {
             if (!isset($params[$arrayKey])) {
                 $params[$arrayKey] = [
                     'in' => $this->getParamLocation(),
@@ -64,12 +67,25 @@ class QueryParameterGenerator implements ParameterGenerator
                     'required' => false,
                     'description' => '',
                     'items' => [
-                        'type' => $type,
+                        'type' => $obj['type'],
                     ],
                 ];
+
+                if (!empty($obj['enums'])) {
+                    $params[$arrayKey]['items']['enum'] = array_map(function($val) {
+                        return trim($val, '"');
+                    }, $obj['enums']);
+                }
             } else {
                 $params[$arrayKey]['type'] = 'array';
-                $params[$arrayKey]['items']['type'] = $type;
+                $params[$arrayKey]['items']['type'] = $obj['type'];
+
+                if (!empty($obj['enums'])) {
+                    $params[$arrayKey]['items']['enum'] =
+                    $propObj['enum'] = array_map(function($val) {
+                        return trim($val, '"');
+                    }, $obj['enums']);
+                }
             }
         }
 

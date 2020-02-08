@@ -4,6 +4,7 @@ namespace Mtrajano\LaravelSwagger;
 
 use App\User;
 use Composer\Autoload\ClassMapGenerator;
+use Illuminate\Support\Arr;
 use ReflectionMethod;
 use Illuminate\Support\Str;
 use Illuminate\Routing\Route;
@@ -67,6 +68,8 @@ class Generator
                 $this->method = strtolower($method);
 
                 if (in_array($this->method, $this->config['ignoredMethods'])) continue;
+                if (isset($this->config['exclude_routes'][$this->uri])
+                    && in_array($this->method, $this->config['exclude_routes'][$this->uri])) continue;
 
                 $this->generatePath();
             }
@@ -184,9 +187,10 @@ class Generator
         $rules = $this->getFormRules() ?: [];
 
         $parameters = (new Parameters\PathParameterGenerator($this->originalUri))->getParameters();
+        $customParams = Arr::get($this->config, "custom_docs.{$this->uri}.{$this->method}.parameters");
 
-        if (!empty($rules)) {
-            $parameterGenerator = $this->getParameterGenerator($rules);
+        if (!empty($rules) || !empty($customParams)) {
+            $parameterGenerator = $this->getParameterGenerator($rules, $customParams);
 
             $parameters = array_merge($parameters, $parameterGenerator->getParameters());
         }
@@ -241,20 +245,43 @@ class Generator
                     return $mock;
                 });
 
-                return app()->call([app($class), 'rules']);
+                $request = app($class);
+                $rules = app()->call([$request, 'rules']);
+
+                if (method_exists($request, 'allowedFilters')) {
+
+                    $additionalRules = app()->call([$request, 'allowedFilters']);
+
+                    foreach ($additionalRules as $rule) {
+
+                        if (Str::contains($rule, '.') && array_key_exists(($key = Str::replaceFirst('.', '_', $rule)), $rules)) {
+                            $rules[$rule] = $rules[$key];
+                            unset($rules[$key]);
+                            continue;
+                        }
+
+                        if (array_key_exists($rule, $rules) || array_key_exists($rule . '.*', $rules)) {
+                            continue;
+                        }
+
+                        $rules[$rule] = '';
+                    }
+                }
+
+                return $rules;
             }
         }
     }
 
-    protected function getParameterGenerator($rules)
+    protected function getParameterGenerator($rules, $customParams)
     {
         switch ($this->method) {
             case 'post':
             case 'put':
             case 'patch':
-                return new Parameters\BodyParameterGenerator($rules);
+                return new Parameters\BodyParameterGenerator($rules, $customParams);
             default:
-                return new Parameters\QueryParameterGenerator($rules);
+                return new Parameters\QueryParameterGenerator($rules, $customParams);
         }
     }
 

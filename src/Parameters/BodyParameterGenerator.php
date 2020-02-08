@@ -2,15 +2,19 @@
 
 namespace Mtrajano\LaravelSwagger\Parameters;
 
+use Illuminate\Support\Arr;
+
 class BodyParameterGenerator implements ParameterGenerator
 {
     use Concerns\GeneratesFromRules;
 
     protected $rules;
+    protected $customParams;
 
-    public function __construct($rules)
+    public function __construct($rules, $customParams)
     {
         $this->rules = $rules;
+        $this->customParams = $customParams;
     }
 
     public function getParameters()
@@ -39,9 +43,20 @@ class BodyParameterGenerator implements ParameterGenerator
 
         //fix some bugs
         foreach ($properties as $k => $v) {
-
             if ($v['type'] == 'array' && isset($properties[$k]['items'])) {
                 $properties[$k]['items'] = $properties[$k]['items'][0];
+            }
+        }
+
+
+
+        if (!empty($this->customParams)) {
+            foreach ($this->customParams as $customParam) {
+                if (Arr::get($customParam, 'required', false)) {
+                    $required[] = $customParam['name'];
+                }
+
+                $properties[$customParam['name']] = Arr::only($customParam, ['type', 'description', 'enum', 'items']);
             }
         }
 
@@ -59,7 +74,7 @@ class BodyParameterGenerator implements ParameterGenerator
         return 'body';
     }
 
-    protected function addToProperties(&$properties, $nameTokens, $rules, $prevTypeArray = false)
+    protected function addToProperties(&$properties, $nameTokens, $rules)
     {
         if (empty($nameTokens)) {
             return;
@@ -91,12 +106,8 @@ class BodyParameterGenerator implements ParameterGenerator
             $properties[$name]['type'] = $type;
         }
 
-//        if ($prevTypeArray) {
-//            $properties = $properties[0];
-//        }
-
         if ($type === 'array') {
-            $this->addToProperties($properties[$name]['items'], $nameTokens, $rules, true);
+            $this->addToProperties($properties[$name]['items'], $nameTokens, $rules);
         } else if ($type === 'object') {
             $this->addToProperties($properties[$name]['properties'], $nameTokens, $rules);
         }

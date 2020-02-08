@@ -7,10 +7,12 @@ class QueryParameterGenerator implements ParameterGenerator
     use Concerns\GeneratesFromRules;
 
     protected $rules;
+    protected $customParams;
 
-    public function __construct($rules)
+    public function __construct($rules, $customParams)
     {
         $this->rules = $rules;
+        $this->customParams = $customParams;
     }
 
     public function getParameters()
@@ -22,6 +24,10 @@ class QueryParameterGenerator implements ParameterGenerator
             $paramRules = $this->splitRules($rule);
             $enums = $this->getEnumValues($paramRules);
             $type = $this->getParamType($paramRules, $param);
+
+            if ($param == 'order_by.*') {
+                $param = $this->getArrayKey($param);
+            }
 
             if ($this->isArrayParameter($param)) {
                 $arrayKey = $this->getArrayKey($param);
@@ -51,9 +57,13 @@ class QueryParameterGenerator implements ParameterGenerator
             $params[$param] = $paramObj;
         }
 
-        $params = $this->addArrayTypes($params, $arrayTypes);
+        $params = array_values($this->addArrayTypes($params, $arrayTypes));
 
-        return array_values($params);
+        if (!empty($this->customParams)) {
+            $params = array_merge($params, $this->customParams);
+        }
+
+        return $params;
     }
 
     protected function addArrayTypes($params, $arrayTypes)
